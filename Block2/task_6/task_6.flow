@@ -1,0 +1,72 @@
+import lingo/pegcode/driver;
+import lib/ds/hashmap; 
+
+export {
+	space : string = " ";
+	plus : string =  "+";
+	mult : string = "*";
+	spacePlus : string = " +";
+	spaceMult : string = " *";
+	numberUselessDigits : int = 2;
+
+	ArExpr ::= ArSum, ArMult, ArInt;
+			   ArSum(lhs:ArExpr, rhs:ArExpr);
+			   ArMult(lhs:ArExpr, rhs:ArExpr);
+			   ArInt(val : int);
+
+	s2ar(str: string) -> ArExpr {
+		parsic2(compilePegGrammar("#include lingo.lingo"), str, defaultPegActions);
+	}
+
+	arExpr2s(exp: ArExpr) -> string {
+		switch (exp) {
+			ArSum(lhs, rhs) : arExpr2s(lhs) + space + arExpr2s(rhs) + spacePlus;
+			ArMult(lhs, rhs) : arExpr2s(lhs) + space + arExpr2s(rhs) + spaceMult;
+			ArInt(val): i2s(val);
+		}
+	}
+
+	ar2i(expr: ArExpr) -> int {
+		switch (expr) {
+			ArSum(lhs, rhs) : ar2i(lhs) + ar2i(rhs);
+			ArMult(lhs, rhs) : ar2i(lhs) * ar2i(rhs);
+			ArInt(val): val;
+		}
+	}
+
+	stackComputing(stack : [string], expr : (int, int) -> int) -> [string] {
+		sizeOutsideStack : int = length(stack);
+
+		interm_stack : [string] = replace(stack,
+										  sizeOutsideStack, 
+										  i2s(expr(s2i(stack[sizeOutsideStack - 1]), s2i(stack[sizeOutsideStack - 2]))));
+
+		removeRange(interm_stack, length(interm_stack) - 3, numberUselessDigits);
+	}
+
+	calculate(example : string) -> string {
+		grammarRPN : string = arExpr2s(s2ar(example));
+		println(grammarRPN);
+
+		exprSplit : [string] = strSplit(grammarRPN, space);
+
+		result : [string] = fold(exprSplit, [], \stackString, cur -> {
+			if (cur == plus) {
+				stackComputing(stackString, \x, y -> x + y);
+			} else if (cur == mult) {
+				stackComputing(stackString, \x, y -> x * y);
+			} else {
+				replace(stackString, length(stackString), cur);
+			}
+		});
+
+		result[0];
+	}
+}
+
+main() {
+    // example = "((10 * 1) + 1)";
+	 example : string = "((13 * 2) + (2 + 4))";
+	println(example);
+	println(calculate(example));
+}

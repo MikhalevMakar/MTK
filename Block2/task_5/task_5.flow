@@ -1,0 +1,36 @@
+import lingo/pegcode/driver;
+
+export {
+    ArExpr ::= ArSum, ArMult, ArInt;
+    ArSum(lhs : ArExpr, rhs : ArExpr);
+    ArMult(lhs : ArExpr, rhs : ArExpr);
+    ArInt(val : int);
+
+    s2arExpr(str: string) -> ArExpr {
+		parsic2(compilePegGrammar("#include lingo.lingo"), str, defaultPegActions);
+	}
+
+    arExpr2s(expr : ArExpr) -> string {
+        switch(expr : ArExpr) {
+            ArSum(lhs, rhs) :  "(" + arExpr2s(lhs) + "+" + arExpr2s(rhs) + ")";
+            ArMult(lhs, rhs) : "(" + arExpr2s(lhs) + "*" + arExpr2s(rhs) + ")";
+            ArInt(var) : i2s(var);
+        }
+    }
+
+    calculateExpr(expr : ArExpr) -> int {
+        switch(expr : ArExpr) {
+            ArSum(lhs, rhs)  : calculateExpr(lhs) + calculateExpr(rhs);
+            ArMult(lhs, rhs) : calculateExpr(lhs) * calculateExpr(rhs);
+            ArInt(var) : var;
+        }
+    }
+}
+
+main() {
+    str: string = "((2 * 3) + 5)";
+    arExpr : ArExpr = s2arExpr(str);
+    println(arExpr);
+    println(calculateExpr(arExpr));
+    println(arExpr2s(arExpr));
+}
